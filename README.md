@@ -28,10 +28,6 @@ truth and want PowerDNS (single node or HA pair) as the serving plane.
 
 Compatible with **NetBox 4.2+** (tested on **4.7**). License: **Apache-2.0**.
 
-## Screenshots
-
-> Add screenshots of Live Status and Settings after first public release (optional).
-
 ## Requirements
 
 - NetBox 4.2 or newer with **netbox-rq** running
