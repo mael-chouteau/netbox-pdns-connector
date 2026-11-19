@@ -1,0 +1,154 @@
+{% extends 'base/layout.html' %}
+{% load helpers %}
+
+{% block title %}PowerDNS — Live Status{% endblock %}
+
+{% block header %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">PowerDNS — Live Status</h1>
+    <a href="{% url 'plugins:netbox_pdns_connector:settings' %}" class="btn btn-outline-primary">
+      <i class="mdi mdi-cog"></i> Settings
+    </a>
+  </div>
+{% endblock %}
+
+{% block content %}
+<div class="alert alert-info">
+  Edit zones and records under <strong>Plugins → DNS</strong> (<code>netbox_dns</code>).
+  This page only shows sync health and SOA serial parity with PowerDNS.
+</div>
+
+{% if live.error %}
+<div class="alert alert-warning">{{ live.error }}</div>
+{% endif %}
+
+<div class="row mb-3">
+  {% for srv in live.servers %}
+  <div class="col-md-6">
+    <div class="card">
+      <h5 class="card-header">{{ srv.label }}</h5>
+      <div class="card-body">
+        <p class="text-muted small mb-2">{{ srv.url }}</p>
+        {% if srv.reachable %}
+          <p class="mb-2"><span class="badge text-bg-success">Reachable</span>
+            {% if srv.latency_ms %}<span class="text-muted">{{ srv.latency_ms }} ms</span>{% endif %}
+          </p>
+          <table class="table table-hover attr-table mb-0">
+            <tr><th>Version</th><td>{{ srv.version }}</td></tr>
+            <tr><th>Zones</th><td>{{ srv.zone_count }}</td></tr>
+          </table>
+        {% else %}
+          <p class="mb-2"><span class="badge text-bg-danger">Unreachable</span></p>
+          <p class="text-danger mb-0">{{ srv.error|default:"Not configured" }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-md-12">
+    <div class="alert alert-warning">{{ live.error|default:"Configure PowerDNS URLs in Settings." }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row mb-3" id="zones">
+  <div class="col-md-12">
+    <div class="card">
+      <h5 class="card-header">Zones (NetBox ↔ PowerDNS parity)</h5>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0">
+            <thead>
+              <tr>
+                <th>Zone</th>
+                <th>NetBox SOA</th>
+                <th>Primary SOA</th>
+                <th>Secondary SOA</th>
+                <th>Records</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for z in live.zones %}
+              <tr>
+                <td>
+                  <a href="{{ z.detail_url }}">{{ z.name }}</a>
+                </td>
+                <td>{{ z.netbox_serial|placeholder }}</td>
+                <td>{{ z.primary_serial|placeholder }}</td>
+                <td>{{ z.secondary_serial|placeholder }}</td>
+                <td>{{ z.record_count }}</td>
+                <td>
+                  {% if z.status == "in_sync" %}
+                    <span class="badge text-bg-success">in sync</span>
+                  {% elif z.status == "drift" %}
+                    <span class="badge text-bg-warning">drift</span>
+                  {% elif z.status == "missing" %}
+                    <span class="badge text-bg-secondary">missing SOA</span>
+                  {% else %}
+                    <span class="badge text-bg-danger">unreachable</span>
+                  {% endif %}
+                </td>
+                <td class="text-end text-nowrap">
+                  <a class="btn btn-sm btn-outline-primary" href="{{ z.netbox_dns_url }}">Open in DNS</a>
+                  <a class="btn btn-sm btn-outline-secondary" href="{{ z.detail_url }}">Details</a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-muted p-3">
+                  No active zones in netbox_dns
+                  {% if config.view %}(filtered by view {{ config.view }}){% endif %}.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <h5 class="card-header">Last sync</h5>
+      <div class="card-body">
+        <table class="table table-hover attr-table mb-3">
+          <tr><th>Auto sync</th>
+            <td>{% if config.sync_enabled %}Every {{ config.sync_interval }} min{% else %}Disabled{% endif %}
+              {% if config.realtime_sync %} / realtime on{% endif %}
+            </td></tr>
+          <tr><th>Status</th><td>{{ config.last_status|placeholder }}</td></tr>
+          <tr><th>Last run</th><td>{{ config.last_run_at|placeholder }}</td></tr>
+          <tr><th>Duration</th>
+            <td>{% if config.last_duration_seconds %}{{ config.last_duration_seconds|floatformat:1 }} s{% else %}{{ ''|placeholder }}{% endif %}</td></tr>
+          <tr><th>Stats</th>
+            <td>zones {{ config.last_stats_zones }} /
+                rrsets {{ config.last_stats_rrsets }} /
+                pushed {{ config.last_stats_pushed }} /
+                errors {{ config.last_stats_errors }}</td></tr>
+          {% if config.last_message %}
+          <tr><th>Message</th><td>{{ config.last_message }}</td></tr>
+          {% endif %}
+          {% if config.dry_run %}
+          <tr><th>Mode</th><td><span class="badge text-bg-warning">Dry run</span></td></tr>
+          {% endif %}
+        </table>
+        <form method="post" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" name="action" value="sync_now" class="btn btn-primary">
+            <i class="mdi mdi-sync"></i> Sync now
+          </button>
+          <button type="submit" name="action" value="test_connection" class="btn btn-outline-secondary">
+            <i class="mdi mdi-lan-connect"></i> Test connection
+          </button>
+          <a href="{% url 'plugins:netbox_pdns_connector:status' %}" class="btn btn-outline-dark">Refresh</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

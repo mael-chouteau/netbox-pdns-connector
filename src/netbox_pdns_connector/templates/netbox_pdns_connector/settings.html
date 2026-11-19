@@ -1,0 +1,38 @@
+{% extends 'base/layout.html' %}
+{% load form_helpers %}
+
+{% block title %}PowerDNS — Settings{% endblock %}
+
+{% block header %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">PowerDNS — Settings</h1>
+    <a href="{% url 'plugins:netbox_pdns_connector:status' %}" class="btn btn-outline-secondary">
+      ← Live Status
+    </a>
+  </div>
+{% endblock %}
+
+{% block content %}
+<form method="post" class="form">
+  {% csrf_token %}
+  {% render_form form %}
+  <div class="mb-3">
+    <span class="text-muted me-2">Interval presets:</span>
+    {% for p in interval_presets %}
+      <button type="button" class="btn btn-sm btn-outline-secondary interval-preset" data-interval="{{ p }}">{{ p }} min</button>
+    {% endfor %}
+  </div>
+  <div class="text-end">
+    <a href="{% url 'plugins:netbox_pdns_connector:status' %}" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">Save</button>
+  </div>
+</form>
+<script type="text/javascript">
+  document.querySelectorAll('.interval-preset').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var field = document.getElementById('id_sync_interval');
+      if (field) field.value = btn.dataset.interval;
+    });
+  });
+</script>
+{% endblock %}
