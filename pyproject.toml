@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-pdns-connector"
-version = "0.1.2"
+version = "0.1.3"
 description = "NetBox plugin: push netbox_dns zones and records to PowerDNS Authoritative (REST API v1)"
 readme = "README.md"
 license = { text = "Apache-2.0" }
