@@ -115,7 +115,6 @@ pytest -q
 ## Related projects
 
 - [`netbox-plugin-dns`](https://github.com/sys4/netbox-plugin-dns) — DNS data model & IPAM DNSsync in NetBox
-- [`netbox-opennebula-sync`](https://github.com/mael-chouteau/netbox-opennebula-sync) — OpenNebula → NetBox inventory sync
 
 ## License
 
